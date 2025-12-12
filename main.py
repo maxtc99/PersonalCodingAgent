@@ -30,7 +30,7 @@ def main():
     
     if args.verbose:
         print(
-        f"Prompt tokens: {args.user_prompt}",
+        f"User prompt: {args.user_prompt}",
         f"Prompt tokens: {response.usage_metadata.prompt_token_count}",
         f"Response tokens: {response.usage_metadata.candidates_token_count}",
         "Response:",
