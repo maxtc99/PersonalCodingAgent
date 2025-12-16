@@ -1,5 +1,3 @@
-# calculator/pkg/calculator.py
-
 class Calculator:
     def __init__(self):
         self.operators = {
@@ -18,7 +16,24 @@ class Calculator:
     def evaluate(self, expression):
         if not expression or expression.isspace():
             return None
-        tokens = expression.strip().split()
+        # Tokenize the expression, adding spaces around parentheses
+        tokens = []
+        current_token = ""
+        for char in expression:
+            if char in "()":
+                if current_token:
+                    tokens.append(current_token)
+                tokens.append(char)
+                current_token = ""
+            elif char.isspace():
+                if current_token:
+                    tokens.append(current_token)
+                current_token = ""
+            else:
+                current_token += char
+        if current_token:
+            tokens.append(current_token)
+        
         return self._evaluate_infix(tokens)
 
     def _evaluate_infix(self, tokens):
@@ -26,7 +41,16 @@ class Calculator:
         operators = []
 
         for token in tokens:
-            if token in self.operators:
+            if token == "(":
+                operators.append(token)
+            elif token == ")":
+                while operators and operators[-1] != "(":
+                    self._apply_operator(operators, values)
+                if operators and operators[-1] == "(":
+                    operators.pop()  # Pop the "("
+                else:
+                    raise ValueError("Mismatched parentheses")
+            elif token in self.operators:
                 while (
                     operators
                     and operators[-1] in self.operators
@@ -41,6 +65,8 @@ class Calculator:
                     raise ValueError(f"invalid token: {token}")
 
         while operators:
+            if operators[-1] == "(":
+                raise ValueError("Mismatched parentheses")
             self._apply_operator(operators, values)
 
         if len(values) != 1:

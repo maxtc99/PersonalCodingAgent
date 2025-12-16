@@ -1,10 +1,32 @@
 import os
-from config import CONTENT_LIMIT
+
 from google.genai import types
+
+from config import MAX_CHARS
+
+
+def get_file_content(working_directory, file_path):
+    try:
+        abs_working_dir = os.path.abspath(working_directory)
+        abs_file_path = os.path.normpath(os.path.join(abs_working_dir, file_path))
+        if os.path.commonpath([abs_working_dir, abs_file_path]) != abs_working_dir:
+            return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
+        if not os.path.isfile(abs_file_path):
+            return f'Error: File not found or is not a regular file: "{file_path}"'
+        with open(abs_file_path, "r") as f:
+            content = f.read(MAX_CHARS)
+            if f.read(1):
+                content += (
+                    f'[...File "{file_path}" truncated at {MAX_CHARS} characters]'
+                )
+        return content
+    except Exception as e:
+        return f'Error reading file "{file_path}": {e}'
+
 
 schema_get_file_content = types.FunctionDeclaration(
     name="get_file_content",
-    description=f"Reads and returns the first {CONTENT_LIMIT} characters of the content from a specified file within the working directory.",
+    description=f"Reads and returns the first {MAX_CHARS} characters of the content from a specified file within the working directory.",
     parameters=types.Schema(
         type=types.Type.OBJECT,
         properties={
@@ -16,21 +38,3 @@ schema_get_file_content = types.FunctionDeclaration(
         required=["file_path"],
     ),
 )
-
-
-def get_file_content(working_directory, file_path):   
-    working_dir_abs = os.path.abspath(working_directory)
-    abs_file = os.path.abspath(os.path.join(working_dir_abs,file_path))
-    if not abs_file.startswith(working_dir_abs):
-        return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'   
-    if not os.path.isfile(abs_file):
-        return f'Error: File not found or is not a regular file: "{file_path}"'
-    try:
-        with open(abs_file, "r") as file:
-            content = file.read(CONTENT_LIMIT) 
-            limit_msg = f'[...File "{abs_file}" truncated at 10000 characters]'         
-            if len(content) >= CONTENT_LIMIT:
-                content += limit_msg                  
-        return content
-    except Exception as e:
-        return f"Error: Cannot read file: {e}"
